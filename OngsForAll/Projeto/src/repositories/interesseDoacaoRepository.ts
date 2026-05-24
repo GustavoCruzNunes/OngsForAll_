@@ -147,15 +147,18 @@ export async function buscarEmailOngPorId(ongId: number) {
     return rows?.[0] ?? null;
 }
 
-export async function atualizarStatusInteresse(id: number, status: string) {
-    await pool.query(
-        `
-    UPDATE interesses_doacao
-    SET status = ?
-    WHERE id = ?
-    `,
-        [status, id]
-    );
+export async function atualizarStatusInteresse(id: number, status: string, quantidadeConfirmada?: number) {
+    if (quantidadeConfirmada !== undefined) {
+        await pool.query(
+            `UPDATE interesses_doacao SET status = ?, quantidade_confirmada = ? WHERE id = ?`,
+            [status, quantidadeConfirmada, id]
+        );
+    } else {
+        await pool.query(
+            `UPDATE interesses_doacao SET status = ? WHERE id = ?`,
+            [status, id]
+        );
+    }
 }
 
 export async function atualizarQuantidadeRecebidaNecessidade(params: {
@@ -201,7 +204,7 @@ export async function buscarInteressesParaLembrete(tipo: "2dias" | "hoje") {
     SELECT
       i.id,
       i.quantidade,
-      i.data_prevista,
+      DATE_FORMAT(i.data_prevista, '%d/%m/%Y') AS data_prevista,
       n.titulo AS titulo_necessidade,
       o.nome AS nome_ong,
       u.nome AS nome_usuario,
